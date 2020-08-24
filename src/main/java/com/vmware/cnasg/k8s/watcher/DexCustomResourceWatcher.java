@@ -1,4 +1,4 @@
-package com.vmware.cnasg.k8s;
+package com.vmware.cnasg.k8s.watcher;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -30,13 +30,13 @@ public class DexCustomResourceWatcher implements Watcher<String> {
         String userName = claims.get("username").getAsString();
         String idProvider = jsonObject.get("connectorID").getAsString();
         String expectedNamespace = "user-" + email.substring(0,email.indexOf("@"));
-        String log = "Watcher[" + watcherName + "] - eventReceived:[" +
+        String log = "eventReceived," +
                 "action:" + action.name() + "," +
                 "email:" + email + "," +
                 "userID:" + userID + "," +
-                "userName:" + userName + "," +
+                "userName:'" + userName + "'," +
                 "idProvider:" + idProvider + "," +
-                "expectedNamespace:" + expectedNamespace + "]";
+                "expectedNamespace:" + expectedNamespace;
 
         switch (action) {
             case ADDED:
@@ -50,6 +50,7 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             case MODIFIED:
             default:
                 logger.info(log);
+                return;
         }
     }
 

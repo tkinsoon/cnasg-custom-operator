@@ -1,4 +1,4 @@
-package com.vmware.cnasg.k8s;
+package com.vmware.cnasg.k8s.watcher;
 
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -23,7 +23,7 @@ public abstract class AbstractWatcher<T> implements Watcher<T> {
             case DELETED:
             case ERROR:
             default:
-                logger.info(t.toString());
+                logger.info(t.getClass().getName() + " " + action + " " + t.toString());
         }
     }
 

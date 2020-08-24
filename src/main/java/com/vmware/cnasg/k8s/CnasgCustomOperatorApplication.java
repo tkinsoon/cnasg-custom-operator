@@ -1,5 +1,6 @@
 package com.vmware.cnasg.k8s;
 
+import com.vmware.cnasg.k8s.watcher.*;
 import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
@@ -31,6 +32,9 @@ public class CnasgCustomOperatorApplication implements CommandLineRunner {
                 .build();
         client.customResource(crdContext).watch("kube-system",
                 new DexCustomResourceWatcher(client));
+        client.pods().inAnyNamespace().watch(new PodWatcher(client));
         client.services().inAnyNamespace().watch(new ServiceWatcher(client));
+//        client.apps().deployments().inAnyNamespace().watch(new DeploymentWatcher(client));
+//        client.apps().replicaSets().inAnyNamespace().watch(new ReplicaSetWatcher(client));
     }
 }
