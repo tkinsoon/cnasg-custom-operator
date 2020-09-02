@@ -16,8 +16,13 @@ public class DexCustomResourceWatcher implements Watcher<String> {
     private static final Logger logger = LoggerFactory.getLogger(DexCustomResourceWatcher.class);
     private KubernetesClient client;
     private String watcherName = "refreshtokens.dex.coreos.com";
+    private String dexUserRole;
+    private String dexUserRoleBindingPrefix;
 
-    public DexCustomResourceWatcher(KubernetesClient client) {
+    public DexCustomResourceWatcher(KubernetesClient client,
+                                    String dexUserRole, String dexUserRoleBindingPrefix) {
+        this.dexUserRole = dexUserRole;
+        this.dexUserRoleBindingPrefix = dexUserRoleBindingPrefix;
         this.client = client;
     }
 
@@ -80,8 +85,9 @@ public class DexCustomResourceWatcher implements Watcher<String> {
 
     private boolean bindNewUserAndNamespace(String email, String namespace) {
         boolean bound = false;
-        String clusterRoleName = "dex-cluster-role";
-        String roleBindingName = "dex-role-binding-" + namespace;
+        String clusterRoleName = dexUserRole;
+        String roleBindingName = dexUserRoleBindingPrefix + namespace;
+        logger.info("clusterRoleName" + clusterRoleName + " roleBindingName: " + roleBindingName);
         ClusterRole clusterRole = client.rbac().clusterRoles().withName(clusterRoleName).get();
         if (clusterRole != null) {
             RoleBinding roleBinding = new RoleBindingBuilder()
