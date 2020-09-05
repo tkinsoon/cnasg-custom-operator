@@ -36,6 +36,7 @@ rules:
   - resourcequotas
   - replicasets
   - replicationcontrollers
+  - secrets
   - serviceaccounts
   - services
   - statefulsets
