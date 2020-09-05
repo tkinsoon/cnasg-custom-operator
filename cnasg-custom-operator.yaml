@@ -10,6 +10,7 @@ rules:
   - autoscaling
   - batch
   - extensions
+  - networking.k8s.io
   - policy
   - rbac.authorization.k8s.io
   - storage.k8s.io
