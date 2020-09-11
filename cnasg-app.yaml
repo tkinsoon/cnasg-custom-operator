@@ -1,0 +1,7 @@
+apiVersion: k8s.cnasg.vmware.com/v1alpha1
+kind: Application
+metadata:
+  name: cn101-devops-app
+spec:
+  image: my-cn101-devops-app
+  location: https://github.com/tkinsoon/cn101-devops-app.git

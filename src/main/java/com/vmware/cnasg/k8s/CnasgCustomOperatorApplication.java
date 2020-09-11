@@ -1,11 +1,6 @@
 package com.vmware.cnasg.k8s;
 
-import com.vmware.cnasg.k8s.watcher.DexCustomResourceWatcher;
-import com.vmware.cnasg.k8s.watcher.PodWatcher;
-import com.vmware.cnasg.k8s.watcher.ServiceWatcher;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,17 +39,22 @@ public class CnasgCustomOperatorApplication implements CommandLineRunner {
     @Override
     public void run(String... arg0) throws Exception {
         logger.info(appInfo);
-        KubernetesClient client = new DefaultKubernetesClient();
-        CustomResourceDefinitionContext crdContext = new CustomResourceDefinitionContext.Builder()
-                .withGroup(dexApiGroup)
-                .withPlural(dexCustomResource)
-                .withScope(dexScope)
-                .withVersion(dexApiVersion)
-                .build();
-        client.customResource(crdContext).watch(dexNamespace,
-                new DexCustomResourceWatcher(client,dexUserRole,dexUserRoleBindingPrefix));
-        client.pods().inAnyNamespace().watch(new PodWatcher(client));
-        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
+        logger.info("Hello World!!!");
+
+//        KubernetesClient client = new DefaultKubernetesClient();
+//
+//        AppRunner appRunner = new AppRunner(client);
+
+//        CustomResourceDefinitionContext crdDexContext = new CustomResourceDefinitionContext.Builder()
+//                .withGroup(dexApiGroup)
+//                .withPlural(dexCustomResource)
+//                .withScope(dexScope)
+//                .withVersion(dexApiVersion)
+//                .build();
+//        client.customResource(crdDexContext).watch(dexNamespace,
+//                new DexCustomResourceWatcher(client,dexUserRole,dexUserRoleBindingPrefix));
+//        client.pods().inAnyNamespace().watch(new PodWatcher(client));
+//        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
 //        client.apps().deployments().inAnyNamespace().watch(new DeploymentWatcher(client));
 //        client.apps().replicaSets().inAnyNamespace().watch(new ReplicaSetWatcher(client));
     }
