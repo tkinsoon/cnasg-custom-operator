@@ -7,6 +7,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.StringJoiner;
 
+import static net.logstash.logback.argument.StructuredArguments.v;
+
 public class ServiceWatcher extends AbstractWatcher<Service> {
 
     private static final Logger logger = LoggerFactory.getLogger(ServiceWatcher.class);
@@ -26,5 +28,11 @@ public class ServiceWatcher extends AbstractWatcher<Service> {
             j.add(namespace);
         }
         logger.info(j.toString());
+
+        logger.info("event received",
+                v("kind",service.getKind()),
+                v("status",action.name()),
+                v("name",service.getMetadata().getName()),
+                v("namespace",service.getMetadata().getNamespace()));
     }
 }

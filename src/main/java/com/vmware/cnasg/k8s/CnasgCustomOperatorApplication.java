@@ -1,6 +1,10 @@
 package com.vmware.cnasg.k8s;
 
+import com.vmware.cnasg.k8s.app.AppRunner;
+import com.vmware.cnasg.k8s.watcher.*;
+import io.fabric8.kubernetes.client.DefaultKubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClient;
+import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -41,21 +45,19 @@ public class CnasgCustomOperatorApplication implements CommandLineRunner {
         logger.info(appInfo);
         logger.info("Hello World!!!");
 
-//        KubernetesClient client = new DefaultKubernetesClient();
-//
-//        AppRunner appRunner = new AppRunner(client);
+        KubernetesClient client = new DefaultKubernetesClient();
 
-//        CustomResourceDefinitionContext crdDexContext = new CustomResourceDefinitionContext.Builder()
-//                .withGroup(dexApiGroup)
-//                .withPlural(dexCustomResource)
-//                .withScope(dexScope)
-//                .withVersion(dexApiVersion)
-//                .build();
-//        client.customResource(crdDexContext).watch(dexNamespace,
-//                new DexCustomResourceWatcher(client,dexUserRole,dexUserRoleBindingPrefix));
-//        client.pods().inAnyNamespace().watch(new PodWatcher(client));
-//        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
-//        client.apps().deployments().inAnyNamespace().watch(new DeploymentWatcher(client));
-//        client.apps().replicaSets().inAnyNamespace().watch(new ReplicaSetWatcher(client));
+        AppRunner appRunner = new AppRunner(client);
+
+        CustomResourceDefinitionContext crdDexContext = new CustomResourceDefinitionContext.Builder()
+                .withGroup(dexApiGroup)
+                .withPlural(dexCustomResource)
+                .withScope(dexScope)
+                .withVersion(dexApiVersion)
+                .build();
+        client.customResource(crdDexContext).watch(dexNamespace,
+                new DexCustomResourceWatcher(client,dexUserRole,dexUserRoleBindingPrefix));
+        client.pods().inAnyNamespace().watch(new PodWatcher(client));
+        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
     }
 }

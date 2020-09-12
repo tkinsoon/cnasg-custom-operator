@@ -1,5 +1,7 @@
 package com.vmware.cnasg.k8s.app;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import io.fabric8.kubernetes.api.model.apiextensions.CustomResourceDefinition;
 import io.fabric8.kubernetes.client.KubernetesClient;
 import io.fabric8.kubernetes.client.KubernetesClientException;
@@ -9,6 +11,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+
+import static net.logstash.logback.argument.StructuredArguments.v;
 
 public class AppRunner implements Watcher<String>  {
 
@@ -38,19 +42,34 @@ public class AppRunner implements Watcher<String>  {
 
     @Override
     public void eventReceived(Action action, String resource) {
+        JsonObject jsonObject = new JsonParser().parse(resource).getAsJsonObject();
+        String kind = jsonObject.get("kind").getAsString();
+        JsonObject metadata = jsonObject.getAsJsonObject("metadata");
+        String name = metadata.get("name").getAsString();
+        String namespace = metadata.get("namespace").getAsString();
+        JsonObject spec = jsonObject.getAsJsonObject("spec");
+        String location = spec.get("location").getAsString();
+
+        logger.info("event received",
+                v("kind",kind),
+                v("status",action.name()),
+                v("name",name),
+                v("namespace",namespace),
+                v("location",location));
+
         switch (action) {
             case ADDED:
             case ERROR:
             case DELETED:
             case MODIFIED:
             default:
-                logger.info("action: " + action + ", resource: " + resource);
                 return;
         }
     }
 
     @Override
     public void onClose(KubernetesClientException cause) {
-        logger.info("cause: " + cause);
+        logger.info("watcher closed",
+                v("cause",cause));
     }
 }

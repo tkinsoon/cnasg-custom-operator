@@ -6,6 +6,8 @@ import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static net.logstash.logback.argument.StructuredArguments.v;
+
 public abstract class AbstractWatcher<T> implements Watcher<T> {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractWatcher.class);
@@ -29,6 +31,7 @@ public abstract class AbstractWatcher<T> implements Watcher<T> {
 
     @Override
     public void onClose(KubernetesClientException cause) {
-        logger.info("Watcher closed due to " + cause);
+        logger.info("watcher closed",
+                v("cause",cause));
     }
 }

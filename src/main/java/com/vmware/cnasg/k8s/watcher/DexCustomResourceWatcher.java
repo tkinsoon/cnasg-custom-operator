@@ -10,12 +10,12 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import static net.logstash.logback.argument.StructuredArguments.v;
 
 public class DexCustomResourceWatcher implements Watcher<String> {
 
     private static final Logger logger = LoggerFactory.getLogger(DexCustomResourceWatcher.class);
     private KubernetesClient client;
-    private String watcherName = "refreshtokens.dex.coreos.com";
     private String dexUserRole;
     private String dexUserRoleBindingPrefix;
 
@@ -29,23 +29,25 @@ public class DexCustomResourceWatcher implements Watcher<String> {
     @Override
     public void eventReceived(Action action, String resource) {
         JsonObject jsonObject = new JsonParser().parse(resource).getAsJsonObject();
+        String kind = jsonObject.get("kind").getAsString();
         JsonObject claims = jsonObject.getAsJsonObject("claims");
         String email = claims.get("email").getAsString();
         String userID = claims.get("userID").getAsString();
         String userName = claims.get("username").getAsString();
         String idProvider = jsonObject.get("connectorID").getAsString();
         String expectedNamespace = "user-" + email.substring(0,email.indexOf("@"));
-        String log = "eventReceived," +
-                "action:" + action.name() + "," +
-                "email:" + email + "," +
-                "userID:" + userID + "," +
-                "userName:'" + userName + "'," +
-                "idProvider:" + idProvider + "," +
-                "expectedNamespace:" + expectedNamespace;
+
+        logger.info("event received",
+                v("kind",kind),
+                v("status",action.name()),
+                v("email",email),
+                v("userID",userID),
+                v("userName",userName),
+                v("idProvider",idProvider),
+                v("expectedNamespace",expectedNamespace));
 
         switch (action) {
             case ADDED:
-                logger.info(log);
                 if (createNamespaceForNewUser(expectedNamespace)) {
                     bindNewUserAndNamespace(email,expectedNamespace);
                 }
@@ -54,14 +56,14 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             case DELETED:
             case MODIFIED:
             default:
-                logger.info(log);
                 return;
         }
     }
 
     @Override
     public void onClose(KubernetesClientException cause) {
-        logger.info("Watcher[" + watcherName + "] close due to " + cause);
+        logger.info("watcher closed",
+                v("cause",cause));
     }
 
     private boolean createNamespaceForNewUser(String namespace){
@@ -75,10 +77,12 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             Namespace newNamespace = client.namespaces().create(ns1);
             if (newNamespace != null) {
                 created = true;
-                logger.info("Namespace[" + namespace + "] created");
+                logger.info("Namespace created",
+                        v("namespace",namespace));
             }
         } else {
-            logger.info("Namespace[" + namespace + "] already exists");
+            logger.info("Namespace already exists",
+                    v("namespace", namespace));
         }
         return created;
     }
@@ -87,7 +91,6 @@ public class DexCustomResourceWatcher implements Watcher<String> {
         boolean bound = false;
         String clusterRoleName = dexUserRole;
         String roleBindingName = dexUserRoleBindingPrefix + namespace;
-        logger.info("clusterRoleName" + clusterRoleName + " roleBindingName: " + roleBindingName);
         ClusterRole clusterRole = client.rbac().clusterRoles().withName(clusterRoleName).get();
         if (clusterRole != null) {
             RoleBinding roleBinding = new RoleBindingBuilder()
@@ -110,13 +113,18 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             RoleBinding createdRoleBinding = client.rbac().roleBindings()
                     .inNamespace(namespace).create(roleBinding);
             if (createdRoleBinding != null) {
-                String log = "User[email:" + email + ",namespace:" + namespace + ",role-binding:" + roleBindingName + "] " +
-                        "bound with cluster-role[" + clusterRoleName + "]";
-                logger.info(log);
+                logger.info("user bound to the namespace",
+                        v("status","BOUND"),
+                        v("email",email),
+                        v("namespace",namespace),
+                        v("roleBinding",roleBindingName),
+                        v("clusterRole",clusterRoleName));
                 bound = true;
             }
         } else {
-            logger.info("cluster-role[" + clusterRoleName + "] not found");
+            logger.info("cluster-role not found",
+                    v("status","NOT_FOUND"),
+                    v("clusterRole",clusterRoleName));
         }
         return bound;
     }
