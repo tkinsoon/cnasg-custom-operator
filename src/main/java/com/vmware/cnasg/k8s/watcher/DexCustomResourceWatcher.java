@@ -10,6 +10,11 @@ import io.fabric8.kubernetes.client.KubernetesClientException;
 import io.fabric8.kubernetes.client.Watcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.time.LocalDate;
+import java.time.Period;
+import java.time.format.DateTimeFormatter;
+
 import static net.logstash.logback.argument.StructuredArguments.v;
 
 public class DexCustomResourceWatcher implements Watcher<String> {
@@ -37,33 +42,42 @@ public class DexCustomResourceWatcher implements Watcher<String> {
         String idProvider = jsonObject.get("connectorID").getAsString();
         String expectedNamespace = "user-" + email.substring(0,email.indexOf("@"));
 
-        logger.info("event received",
-                v("kind",kind),
-                v("status",action.name()),
-                v("email",email),
-                v("userID",userID),
-                v("userName",userName),
-                v("idProvider",idProvider),
-                v("expectedNamespace",expectedNamespace));
-
-        switch (action) {
-            case ADDED:
-                if (createNamespaceForNewUser(expectedNamespace)) {
-                    bindNewUserAndNamespace(email,expectedNamespace);
-                }
-                return;
-            case ERROR:
-            case DELETED:
-            case MODIFIED:
-            default:
-                return;
+        JsonObject metadata = jsonObject.getAsJsonObject("metadata");
+        String creationTimestamp = metadata.get("creationTimestamp").getAsString();
+        String pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'";
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
+        LocalDate creationDate = LocalDate.from(formatter.parse(creationTimestamp));
+        Period period = Period.between(creationDate, LocalDate.now());
+        if (period.getDays() <= 1) {
+            switch (action) {
+                case ADDED:
+                    if (createNamespaceForNewUser(expectedNamespace)) {
+                        if (bindNewUserAndNamespace(email,expectedNamespace)) {
+                            logger.info("event received",
+                                    v("kind",kind),
+                                    v("status",action.name()),
+                                    v("email",email),
+                                    v("userID",userID),
+                                    v("userName",userName),
+                                    v("idProvider",idProvider),
+                                    v("namespace",expectedNamespace));
+                        }
+                    }
+                    return;
+                case ERROR:
+                case DELETED:
+                case MODIFIED:
+                default:
+                    return;
+            }
+        } else {
+            logger.info("event received, but ignore the event older than a day");
         }
     }
 
     @Override
     public void onClose(KubernetesClientException cause) {
-        logger.info("watcher closed",
-                v("cause",cause));
+        logger.info("watcher closed, cause: " + cause);
     }
 
     private boolean createNamespaceForNewUser(String namespace){
@@ -77,12 +91,10 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             Namespace newNamespace = client.namespaces().create(ns1);
             if (newNamespace != null) {
                 created = true;
-                logger.info("Namespace created",
-                        v("namespace",namespace));
+                logger.info("Namespace["+namespace+"] created");
             }
         } else {
-            logger.info("Namespace already exists",
-                    v("namespace", namespace));
+            logger.info("Namespace["+namespace+"] already exists");
         }
         return created;
     }
@@ -113,18 +125,12 @@ public class DexCustomResourceWatcher implements Watcher<String> {
             RoleBinding createdRoleBinding = client.rbac().roleBindings()
                     .inNamespace(namespace).create(roleBinding);
             if (createdRoleBinding != null) {
-                logger.info("user bound to the namespace",
-                        v("status","BOUND"),
-                        v("email",email),
-                        v("namespace",namespace),
-                        v("roleBinding",roleBindingName),
-                        v("clusterRole",clusterRoleName));
+                logger.info("user["+email+"] bound to the namespace["+namespace+"]," +
+                        "role-binding[" + roleBindingName + "],cluster-role[" + clusterRoleName + "]");
                 bound = true;
             }
         } else {
-            logger.info("cluster-role not found",
-                    v("status","NOT_FOUND"),
-                    v("clusterRole",clusterRoleName));
+            logger.info("cluster-role["+ clusterRoleName +"] not found");
         }
         return bound;
     }

@@ -69,7 +69,6 @@ public class AppRunner implements Watcher<String>  {
 
     @Override
     public void onClose(KubernetesClientException cause) {
-        logger.info("watcher closed",
-                v("cause",cause));
+        logger.info("watcher closed, cause: " + cause);
     }
 }
