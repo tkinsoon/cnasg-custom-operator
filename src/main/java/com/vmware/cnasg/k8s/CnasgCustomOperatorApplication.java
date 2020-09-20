@@ -1,42 +1,32 @@
 package com.vmware.cnasg.k8s;
 
-import com.vmware.cnasg.k8s.app.AppRunner;
-import com.vmware.cnasg.k8s.watcher.DexCustomResourceWatcher;
-import com.vmware.cnasg.k8s.watcher.PodWatcher;
-import com.vmware.cnasg.k8s.watcher.ServiceWatcher;
-import io.fabric8.kubernetes.client.DefaultKubernetesClient;
-import io.fabric8.kubernetes.client.KubernetesClient;
-import io.fabric8.kubernetes.client.dsl.base.CustomResourceDefinitionContext;
+import com.vmware.cnasg.k8s.controller.CnaSgApplicationController;
+import com.vmware.cnasg.k8s.controller.DexNamespaceController;
+import com.vmware.cnasg.k8s.controller.K8sControllers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+import javax.annotation.PreDestroy;
+
 @SpringBootApplication
 public class CnasgCustomOperatorApplication implements CommandLineRunner {
 
+    private K8sControllers controllers;
     public static final Logger logger =
             LoggerFactory.getLogger(CnasgCustomOperatorApplication.class);
-    private KubernetesClient client;
 
     @Value("${app.info}")
     private String appInfo;
-    @Value("${dex.namespace}")
-    private String dexNamespace;
-    @Value("${dex.api.group}")
-    private String dexApiGroup;
-    @Value("${dex.api.version}")
-    private String dexApiVersion;
-    @Value("${dex.customresource}")
-    private String dexCustomResource;
-    @Value("${dex.scope}")
-    private String dexScope;
-    @Value("${dex.userrole}")
-    private String dexUserRole;
-    @Value("${dex.userrolebinding.prefix}")
-    private String dexUserRoleBindingPrefix;
+
+    @Autowired
+    public void setK8sControllers(K8sControllers controllers) {
+        this.controllers = controllers;
+    }
 
     public static void main(String[] args) {
         SpringApplication.run(CnasgCustomOperatorApplication.class, args);
@@ -45,21 +35,19 @@ public class CnasgCustomOperatorApplication implements CommandLineRunner {
     @Override
     public void run(String... arg0) throws Exception {
         logger.info(appInfo);
+        controllers.put(DexNamespaceController.class.getSimpleName(), new DexNamespaceController());
+        controllers.put(CnaSgApplicationController.class.getSimpleName(), new CnaSgApplicationController());
 
-        KubernetesClient client = new DefaultKubernetesClient();
+//        client.pods().inAnyNamespace().watch(new PodWatcher(client));
+//        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
+//
+//        AppRunner appRunner = new AppRunner(provider.getLocalK8sClient());
+    }
 
-        CustomResourceDefinitionContext crdDexContext = new CustomResourceDefinitionContext.Builder()
-                .withGroup(dexApiGroup)
-                .withPlural(dexCustomResource)
-                .withScope(dexScope)
-                .withVersion(dexApiVersion)
-                .build();
-        client.customResource(crdDexContext).watch(dexNamespace,
-                new DexCustomResourceWatcher(client,dexUserRole,dexUserRoleBindingPrefix));
-
-        client.pods().inAnyNamespace().watch(new PodWatcher(client));
-        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
-
-        AppRunner appRunner = new AppRunner(client);
+    @PreDestroy
+    public void onDestroy() {
+        logger.info("gracefully stop the K8s controllers");
+        controllers.stopControllers();
+        logger.info("all controllers are stopped");
     }
 }

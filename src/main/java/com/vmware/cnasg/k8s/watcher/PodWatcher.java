@@ -20,16 +20,6 @@ public class PodWatcher extends AbstractWatcher<Pod> {
 
     @Override
     public void eventReceived(Action action, Pod pod) {
-//        StringJoiner j = new StringJoiner(",");
-//        j.add(action.name());
-//        j.add(pod.getKind());
-//        j.add(pod.getMetadata().getName());
-//        j.add(pod.getMetadata().getNamespace());
-//        j.add(pod.getMetadata().getLabels().toString());
-//        j.add(pod.getSpec().getContainers().get(0).getImage());
-//        j.add(pod.getStatus().getHostIP());
-//        j.add(pod.getStatus().getPodIP());
-//        logger.info(j.toString());
 
         String pattern = "yyyy-MM-dd'T'HH:mm:ss'Z'";
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
