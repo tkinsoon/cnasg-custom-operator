@@ -40,7 +40,7 @@ public class CnasgCustomOperatorApplication implements CommandLineRunner {
 
 //        client.pods().inAnyNamespace().watch(new PodWatcher(client));
 //        client.services().inAnyNamespace().watch(new ServiceWatcher(client));
-//
+        
 //        AppRunner appRunner = new AppRunner(provider.getLocalK8sClient());
     }
 
